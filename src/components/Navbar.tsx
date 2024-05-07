@@ -7,7 +7,7 @@ export default function Navbar() {
 
   const CustomLink = ({ href, label }: { href: string; label: string }) => {
     return (
-      <Link href={href} className={pathname === href ? "text-[#40E0D0]" : ""}>
+      <Link href={href} className={pathname === href ? "text-[#ffd700]" : ""}>
         {label}
       </Link>
     );

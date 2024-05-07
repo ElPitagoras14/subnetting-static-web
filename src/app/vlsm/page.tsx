@@ -3,7 +3,7 @@ import Card from "@/components/Card";
 import FormField from "@/components/FormField";
 import Sidebar from "@/components/Sidebar";
 import SubnetDetail from "@/components/SubnetDetail";
-import { ipRegex } from "@/utils/utils";
+import { castVlsmInfo, ipRegex } from "@/utils/utils";
 import {
   ArrowsUpDownIcon,
   PlusIcon,
@@ -16,6 +16,7 @@ import { useDrag, useDrop } from "react-dnd";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import TreeComponent from "@/components/Tree";
+import { hostVlsm, orderedHostVlsm } from "@/libraries/subnetting/subnet";
 
 const lefTabShadow =
   "bg-[#E5E5E5] shadow-[inset_-2px_2px_4px_0px_rgba(0,0,0,0.3)]";
@@ -114,33 +115,33 @@ const VLSMResult = ({ result }: { result: any }) => {
     return null;
   }
   const {
-    subnet_info: {
-      initial_ip,
-      initial_mask,
-      initial_host_per_network,
-      host_per_network,
+    subnetInfo: {
+      initialIp,
+      initialMask,
+      initialHostPerNetwork,
+      hostPerNetwork,
     },
   } = result;
 
   const valuesMap = [
     {
       label: "Initial Ip",
-      value: initial_ip,
+      value: initialIp,
       type: "text",
     },
     {
       label: "Initial Mask",
-      value: initial_mask,
+      value: initialMask,
       type: "text",
     },
     {
       label: "Initial Host Per Network",
-      value: initial_host_per_network,
+      value: initialHostPerNetwork,
       type: "array",
     },
     {
       label: "Host Per Network",
-      value: host_per_network,
+      value: hostPerNetwork,
       type: "array",
     },
   ];
@@ -246,8 +247,6 @@ const HostItem: React.FC<HostItemProps> = ({
   );
 };
 
-const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-
 export default function VLSM() {
   const [activeTab, setActiveTab] = useState<string>("data");
   const [result, setResult] = useState<any>(null);
@@ -272,18 +271,14 @@ export default function VLSM() {
 
   const handleSubmit = async (values: any) => {
     const { initialIp, mask, byType, hosts } = values;
-    const response = await fetch(`${backendUrl}/api/v1/subnet/vlsm/${byType}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        init_ip: initialIp,
-        init_mask: mask,
-        host_list: hosts,
-      }),
-    });
-    setResult(await response.json());
+    let result = null;
+    if (byType === "hosts") {
+      result = hostVlsm(initialIp, parseInt(mask), hosts);
+    } else {
+      result = orderedHostVlsm(initialIp, parseInt(mask), hosts);
+    }
+    const castedResult = castVlsmInfo(result);
+    setResult(castedResult);
   };
 
   return (
@@ -456,7 +451,7 @@ export default function VLSM() {
           <div className="col-span-3">
             {result && (
               <TreeComponent
-                d3Tree={result.d3_tree}
+                d3Tree={result.d3Tree}
                 setDetail={setDetail}
               ></TreeComponent>
             )}

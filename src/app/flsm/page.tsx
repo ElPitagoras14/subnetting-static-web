@@ -5,9 +5,10 @@ import Sidebar from "@/components/Sidebar";
 import { Form, Formik } from "formik";
 import { useEffect, useState } from "react";
 import * as Yup from "yup";
-import { ipRegex } from "@/utils/utils";
+import { castFlsmInfo, ipRegex } from "@/utils/utils";
 import SubnetDetail from "@/components/SubnetDetail";
 import TreeComponent from "@/components/Tree";
+import { hostFlsm, networksFlsm } from "@/libraries/subnetting/subnet";
 
 const lefTabShadow =
   "bg-[#E5E5E5] shadow-[inset_-2px_2px_4px_0px_rgba(0,0,0,0.3)]";
@@ -76,24 +77,24 @@ const FLSMResult = ({ result }: { result: any }) => {
     return null;
   }
   const {
-    subnet_info: {
-      initial_ip,
-      initial_mask,
+    subnetInfo: {
+      initialIp,
+      initialMask,
       m,
       n,
-      number_of_networks,
-      number_of_hosts,
+      numberOfNetworks,
+      numberOfHosts,
     },
   } = result;
 
   const valuesMap = [
     {
       label: "Initial Ip",
-      value: initial_ip,
+      value: initialIp,
     },
     {
       label: "Initial Mask",
-      value: initial_mask,
+      value: initialMask,
     },
     {
       label: "n",
@@ -105,11 +106,11 @@ const FLSMResult = ({ result }: { result: any }) => {
     },
     {
       label: "Number of Networks",
-      value: number_of_networks,
+      value: numberOfNetworks,
     },
     {
       label: "Number of Hosts",
-      value: number_of_hosts,
+      value: numberOfHosts,
     },
   ];
 
@@ -131,8 +132,6 @@ const FLSMResult = ({ result }: { result: any }) => {
     </Card>
   );
 };
-
-const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 export default function FLSM() {
   const [activeTab, setActiveTab] = useState<string>("data");
@@ -158,18 +157,14 @@ export default function FLSM() {
 
   const handleSubmit = async (values: any) => {
     const { initialIp, mask, byType, minValue } = values;
-    const response = await fetch(`${backendUrl}/api/v1/subnet/flsm/${byType}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        init_ip: initialIp,
-        init_mask: mask,
-        min_value: minValue,
-      }),
-    });
-    setResult(await response.json());
+    let result = null;
+    if (byType === "hosts") {
+      result = hostFlsm(initialIp, parseInt(mask), minValue);
+    } else {
+      result = networksFlsm(initialIp, parseInt(mask), minValue);
+    }
+    const castedResult = castFlsmInfo(result);
+    setResult(castedResult);
   };
 
   return (
@@ -263,7 +258,7 @@ export default function FLSM() {
         <div className="col-span-3">
           {result && (
             <TreeComponent
-              d3Tree={result.d3_tree}
+              d3Tree={result.d3Tree}
               setDetail={setDetail}
             ></TreeComponent>
           )}
