@@ -132,7 +132,6 @@ function treeToStr(
 }
 
 function getD3Tree(root: SubnettingNode | null): any {
-    console.log(root);
   if (root === null) {
     return null;
   }

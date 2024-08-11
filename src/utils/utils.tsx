@@ -15,7 +15,6 @@ function castSubnet(
     subnetInfo: subnetTypeInfo,
     d3Tree: d3Tree,
   };
-  console.log(result);
   return result;
 }
 

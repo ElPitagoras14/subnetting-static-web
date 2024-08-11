@@ -20,8 +20,9 @@ function networksFlsm(
     throw new InvalidIPException();
   }
 
+  const parsedMinNetworks = parseInt(minNetworks.toString());
   const networkList: Network[] = [];
-  const n = getPotentialBitNumber(minNetworks);
+  const n = getPotentialBitNumber(parsedMinNetworks);
   const newMask = mask + n;
   const m = 32 - newMask;
   if (m < 0 || n < 0) {
@@ -32,16 +33,19 @@ function networksFlsm(
 
   for (let i = 0; i < Math.pow(2, n); i++) {
     const red = "Net " + (i + 1);
-    const netTmp: Network = {
+    const netTmp = {
       name: red,
       subnet: ip,
       mask: newMask,
       firstIp: getNextIp(ip),
-      lastIp: getPreviousIp(getPreviousIp(ip)),
-      broadcast: getPreviousIp(ip),
     };
     ip = addHost(ip, Math.pow(2, m));
-    networkList.push(netTmp);
+    const net: Network = {
+      ...netTmp,
+      broadcast: getPreviousIp(ip),
+      lastIp: getPreviousIp(getPreviousIp(ip)),
+    }
+    networkList.push(net);
   }
 
   const subnet: SubnetResult = {
@@ -63,7 +67,8 @@ function hostFlsm(ip: string, mask: number, minHost: number): SubnetResult {
     throw new InvalidIPException();
   }
 
-  const m = getPotentialBitNumber(minHost + 2);
+  const parsedMinHost = parseInt(minHost.toString());
+  const m = getPotentialBitNumber(parsedMinHost + 2);
   const n = 32 - mask - m;
   if (m < 0 || n < 0) {
     throw new InsufficientHostsMaskException();
@@ -79,10 +84,10 @@ function hostVlsm(ip: string, mask: number, hostList: number[]): SubnetResult {
   const networkList: Network[] = [];
   const finalHostList: number[] = [];
   let cnt = 0;
-  let totalHosts = hostList.reduce(
-    (acc, curr) => acc + Math.pow(2, getPotentialBitNumber(curr + 2)),
-    0
-  );
+  let totalHosts = hostList.reduce((acc: number, curr: number) => {
+    const parsedCurr = parseInt(curr.toString());
+    return acc + Math.pow(2, getPotentialBitNumber(parsedCurr + 2));
+  }, 0);
   const m = getPotentialBitNumber(totalHosts);
   const n = 32 - mask - m;
   if (m < 0 || n < 0) {
@@ -92,20 +97,24 @@ function hostVlsm(ip: string, mask: number, hostList: number[]): SubnetResult {
   let initialIp = ip;
 
   for (const host of hostList) {
-    const m = getPotentialBitNumber(host + 2);
+    const parsedHost = parseInt(host.toString());
+    const m = getPotentialBitNumber(parsedHost + 2);
     const n = 32 - mask - m;
     const newMask = mask + n;
     const red = "Net " + (cnt + 1);
-    const netTmp: Network = {
+    const netTmp = {
       name: red,
       subnet: ip,
       mask: newMask,
       firstIp: getNextIp(ip),
-      lastIp: getPreviousIp(getPreviousIp(ip)),
-      broadcast: getPreviousIp(ip),
     };
     ip = addHost(ip, Math.pow(2, m));
-    networkList.push(netTmp);
+    const net: Network = {
+      ...netTmp,
+      lastIp: getPreviousIp(getPreviousIp(ip)),
+      broadcast: getPreviousIp(ip),
+    }
+    networkList.push(net);
     finalHostList.push(Math.pow(2, m));
     cnt++;
   }
@@ -131,7 +140,11 @@ function orderedHostVlsm(
     throw new InvalidIPException();
   }
 
-  const orderedList = hostList.slice().sort((a, b) => b - a);
+  const orderedList = hostList.slice().sort((a: number, b: number) => {
+    const parsedA = parseInt(a.toString());
+    const parsedB = parseInt(b.toString());
+    return parsedB - parsedA;
+  });
   return hostVlsm(ip, mask, orderedList);
 }
 
